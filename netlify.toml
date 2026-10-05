@@ -1,0 +1,19 @@
+# Static site — no build step. Publish the repository root.
+[build]
+  publish = "."
+
+# Legacy paths (if you shared old links)
+[[redirects]]
+  from = "/interactive_portfolio_engine.html"
+  to = "/interactive/"
+  status = 301
+
+[[redirects]]
+  from = "/Traditional Style/*"
+  to = "/traditional/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/Traditional%20Style/*"
+  to = "/traditional/:splat"
+  status = 301

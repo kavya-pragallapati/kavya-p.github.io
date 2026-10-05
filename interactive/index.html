@@ -1,0 +1,2008 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kavya.Work - Interactive Story & Portfolio Engine</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #121212;
+            color: #e0e0e0;
+            /* Full-height flex column: content area on top, choices drawer
+               docked at the bottom. The content area scrolls on its own, so
+               nothing is ever hidden behind the drawer. */
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Top Bar Navigation */
+        #top-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background-color: #161616;
+            border-bottom: 1px solid #2a2a2a;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #ffffff;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* Level-Up Bar */
+        .level-bar-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .level-badge {
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: #00adb5;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            white-space: nowrap;
+            min-width: 60px;
+        }
+
+        .level-track {
+            width: 120px;
+            height: 8px;
+            background-color: #2a2a2a;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .level-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00adb5, #6c5ce7);
+            border-radius: 4px;
+            transition: width 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+        }
+
+        .level-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.15) 50%, transparent 100%);
+            animation: levelShimmer 2s infinite;
+        }
+
+        @keyframes levelShimmer {
+            0% {
+                transform: translateX(-100%);
+            }
+
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        .level-tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a1a1a;
+            border: 1px solid #444;
+            color: #e0e0e0;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            margin-bottom: 8px;
+            z-index: 60;
+        }
+
+        .level-bar-container:hover .level-tooltip {
+            opacity: 1;
+        }
+
+        /* Level-Up Flash Animation */
+        @keyframes levelUpFlash {
+            0% {
+                box-shadow: 0 0 0 0 rgba(0, 173, 181, 0.6);
+            }
+
+            50% {
+                box-shadow: 0 0 20px 4px rgba(0, 173, 181, 0.4);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(0, 173, 181, 0);
+            }
+        }
+
+        .level-up-flash {
+            animation: levelUpFlash 0.8s ease-out;
+        }
+
+        .history-btn {
+            background-color: #242424;
+            color: #e0e0e0;
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 8px 14px;
+            cursor: pointer;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .history-btn:hover {
+            border-color: #00adb5;
+            color: #00adb5;
+            background-color: #1a1a1a;
+        }
+
+        /* Main Container Layout */
+        #story-container {
+            /* Shrinks to whatever is left above the choices drawer */
+            flex: 1 1 auto;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            /* Scrolls only as a fallback on very short viewports */
+            overflow-x: hidden;
+            overflow-y: auto;
+            padding: 90px 24px 24px 24px;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+            /* Firefox */
+            scrollbar-width: thin;
+            scrollbar-color: #444 #181818;
+        }
+
+        .game-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #ffffff;
+            text-align: center;
+            letter-spacing: 3px;
+            margin-bottom: 24px;
+            text-transform: uppercase;
+            text-shadow: 0 0 8px rgba(0, 173, 181, 0.4);
+        }
+
+        /* Name Input Field */
+        .name-input-wrapper {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .name-input-field {
+            background: #1e1e1e;
+            border: 1px solid #444;
+            border-bottom: 2px solid #00adb5;
+            color: #ffffff;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1rem;
+            padding: 6px 12px;
+            border-radius: 4px;
+            outline: none;
+            width: 180px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .name-input-field:focus {
+            border-color: #00adb5;
+            box-shadow: 0 0 8px rgba(0, 173, 181, 0.3);
+        }
+
+        .name-input-field::placeholder {
+            color: #666;
+            font-style: italic;
+        }
+
+        .name-submit-btn {
+            background: #1a1a1a;
+            border: 1px solid #00adb5;
+            color: #00adb5;
+            font-family: inherit;
+            font-size: 0.85rem;
+            padding: 6px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .name-submit-btn:hover {
+            background: #00adb5;
+            color: #121212;
+        }
+
+        .name-display {
+            color: #00adb5;
+            font-weight: bold;
+        }
+
+        .dialogue-box {
+            width: 100%;
+            line-height: 1.7;
+        }
+
+        /* 1. Static Layout (Float images alongside text) */
+        .dialogue-box.static-wrap-layout .dialogue-image-column.float-left {
+            float: left;
+            margin: 0 24px 16px 0;
+            max-width: 45%;
+        }
+
+        .dialogue-box.static-wrap-layout .dialogue-image-column.float-right {
+            float: right;
+            margin: 0 0 16px 24px;
+            max-width: 45%;
+        }
+
+        .dialogue-box.static-wrap-layout::after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        /* 2. Interactive Side-by-Side Flex Layout */
+        .dialogue-box.side-by-side-layout {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+        }
+
+        .dialogue-text-column {
+            flex: 1;
+        }
+
+        .side-by-side-layout .dialogue-image-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            max-width: 50%;
+        }
+
+        /* Images and Lightbox */
+        .carousel-wrapper {
+            position: relative;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .dialogue-image {
+            max-width: 100%;
+            max-height: 40vh;
+            object-fit: contain;
+            border-radius: 6px;
+            border: 1px solid #444;
+            display: none;
+            cursor: zoom-in;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .dialogue-image:hover {
+            transform: scale(1.02);
+            border-color: #00adb5;
+        }
+
+        .dialogue-image.active-slide {
+            display: block !important;
+        }
+
+        /* Typography */
+        .dialogue-box p {
+            font-size: 1.05rem;
+            margin-bottom: 16px;
+            color: #e0e0e0;
+        }
+
+        .dialogue-box ul,
+        .dialogue-box ol {
+            margin: 0 0 20px 24px;
+            line-height: 1.6;
+        }
+
+        .dialogue-box li {
+            margin-bottom: 8px;
+        }
+
+        .dialogue-box b,
+        .dialogue-box strong {
+            color: #ffffff;
+            font-size: 1.1rem;
+        }
+
+        .dialogue-box code {
+            background: #222;
+            color: #00adb5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+
+        /* Choice Drawer */
+        #choices-drawer {
+            /* Docked as the last row of the page's flex column instead of being
+               fixed over the content, so the content above can never be hidden
+               behind it. */
+            flex: 0 0 auto;
+            width: 100%;
+            background-color: #121212;
+            border-top: 2px solid #333;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: all 0.3s ease-in-out;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.8);
+        }
+
+        .drawer-toggle {
+            width: 100%;
+            max-width: 800px;
+            padding: 12px 20px;
+            background: #1a1a1a;
+            border: none;
+            color: #00adb5;
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .drawer-toggle:hover {
+            background-color: #222;
+        }
+
+        .drawer-content {
+            width: 100%;
+            max-width: 800px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out;
+            padding: 0 20px;
+        }
+
+        #choices-drawer.open .drawer-content {
+            max-height: 50vh;
+            overflow-y: auto;
+            padding: 12px 20px 20px 20px;
+        }
+
+        #choices-drawer.open .toggle-icon {
+            transform: rotate(180deg);
+        }
+
+        .toggle-icon {
+            transition: transform 0.3s ease;
+        }
+
+        .choices-list {
+            list-style: none;
+            width: 100%;
+        }
+
+        .choice-item {
+            position: relative;
+            padding: 12px 16px 12px 36px;
+            margin-bottom: 10px;
+            background-color: #1e1e1e;
+            border: 1px solid #333;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .choice-item::before {
+            content: '▶';
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #888;
+            font-size: 0.8rem;
+        }
+
+        .choice-item.visited {
+            opacity: 0.65;
+            background-color: #161616;
+            border-style: dashed;
+        }
+
+        .choice-item.visited::before {
+            content: '✓';
+            color: #00adb5;
+        }
+
+        .choice-item:hover {
+            background-color: #2a2a2a;
+            border-color: #00adb5;
+            color: #ffffff;
+            transform: translateX(4px);
+        }
+
+        /* History Drawer */
+        #history-drawer {
+            position: fixed;
+            top: 0;
+            right: -360px;
+            width: 360px;
+            height: 100vh;
+            background-color: #181818;
+            border-left: 2px solid #333;
+            z-index: 200;
+            transition: right 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.8);
+        }
+
+        #history-drawer.open {
+            right: 0;
+        }
+
+        .history-header {
+            padding: 20px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #aaa;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .close-btn:hover {
+            color: #fff;
+        }
+
+        .history-list {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+            list-style: none;
+        }
+
+        .history-entry {
+            padding: 10px;
+            margin-bottom: 8px;
+            background-color: #222;
+            border: 1px solid #333;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+
+        .history-entry:hover {
+            border-color: #00adb5;
+            color: #00adb5;
+        }
+
+        .reset-btn-container {
+            padding: 20px;
+            border-top: 1px solid #333;
+        }
+
+        .reset-btn {
+            width: 100%;
+            background-color: #2b1414;
+            color: #ff5555;
+            border: 1px solid #ff5555;
+            border-radius: 6px;
+            padding: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+
+        .reset-btn:hover {
+            background-color: #ff5555;
+            color: #ffffff;
+        }
+
+        /* Lightbox Modal */
+        #lightbox-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        #lightbox-modal.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .lightbox-content {
+            max-width: 90vw;
+            max-height: 88vh;
+            object-fit: contain;
+            border-radius: 6px;
+            border: 2px solid #444;
+        }
+
+        .lightbox-close-btn {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            background: #242424;
+            color: #ffffff;
+            border: 1px solid #555;
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .lightbox-close-btn:hover {
+            border-color: #00adb5;
+            color: #00adb5;
+        }
+
+        /* Scrollable Dialogue Window */
+        #dialogue-box {
+            /* Fills the space above the choices drawer and scrolls on its own.
+               The min-height keeps it visible/usable even on very short
+               viewports, where the container scrolls instead. */
+            flex: 1 1 auto;
+            min-height: 72px;
+            overflow-y: auto;
+            padding-right: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overscroll-behavior: contain;
+            scrollbar-gutter: stable;
+            /* Firefox */
+            scrollbar-width: thin;
+            scrollbar-color: #444 #181818;
+        }
+
+        /* Custom Scrollbar for Dialogue Box */
+        #dialogue-box::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #dialogue-box::-webkit-scrollbar-track {
+            background: #181818;
+            border-radius: 4px;
+        }
+
+        #dialogue-box::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 4px;
+        }
+
+        #dialogue-box::-webkit-scrollbar-thumb:hover {
+            background: #00adb5;
+        }
+
+        /* Choice Section Line Breaks */
+        .dialogue-card.choice-break {
+            margin-top: 16px;
+            border-top: 1px dashed #333;
+            padding-top: 16px;
+        }
+
+        /* Individual Dialogue Cards */
+        .dialogue-card {
+            background-color: #1a1a1a;
+            border-left: 4px solid #00adb5;
+            border-radius: 4px;
+            padding: 12px 16px;
+            line-height: 1.5;
+        }
+
+        .dialogue-card.user-talk {
+            background-color: #1e262b;
+            border-left-color: #ff9f43;
+        }
+
+        .dialogue-card.action-talk {
+            background-color: #161616;
+            border-left-color: #6c5ce7;
+            font-style: italic;
+        }
+
+        .speaker-label {
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #00adb5;
+            margin-bottom: 4px;
+        }
+
+        .dialogue-card.user-talk .speaker-label {
+            color: #ff9f43;
+        }
+
+        .dialogue-card.action-talk .speaker-label {
+            color: #a29bfe;
+        }
+
+        /* Animated ASCII Jump Effect */
+        @keyframes asciiJump {
+            0% {
+                transform: translateY(0);
+            }
+
+            30% {
+                transform: translateY(-20px) scaleY(1.05);
+            }
+
+            60% {
+                transform: translateY(0) scaleY(0.95);
+            }
+
+            80% {
+                transform: translateY(-6px);
+            }
+
+            100% {
+                transform: translateY(0);
+            }
+        }
+
+        .ascii-jumping {
+            display: inline-block;
+            font-family: monospace;
+            white-space: pre;
+            color: #00adb5;
+            font-weight: bold;
+            animation: asciiJump 0.6s ease-in-out;
+        }
+
+        @media (max-width: 768px) {
+            .dialogue-box.side-by-side-layout {
+                flex-direction: column;
+            }
+
+            .side-by-side-layout .dialogue-image-column {
+                max-width: 100%;
+            }
+
+            .dialogue-box.static-wrap-layout .dialogue-image-column.float-left,
+            .dialogue-box.static-wrap-layout .dialogue-image-column.float-right {
+                float: none;
+                max-width: 100%;
+                margin: 0 0 16px 0;
+            }
+        }
+
+        /* Short viewports (e.g. landscape phones): trim the header offset and
+           title so the content window keeps a usable height even when the
+           choices drawer is expanded. */
+        @media (max-height: 620px) {
+            #story-container {
+                padding-top: 74px;
+                padding-bottom: 12px;
+            }
+
+            .game-title {
+                font-size: 1.3rem;
+                margin-bottom: 12px;
+                letter-spacing: 2px;
+            }
+
+            #choices-drawer.open .drawer-content {
+                /* Never let the expanded drawer crowd out the content area */
+                max-height: min(42vh, calc(100vh - 260px));
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header id="top-header">
+        <div class="header-left">
+            <div class="header-title">Kavya.Work</div>
+            <div class="level-bar-container" id="level-bar-container">
+                <span class="level-badge" id="level-badge">Lv. 0</span>
+                <div class="level-track">
+                    <div class="level-fill" id="level-fill" style="width: 0%"></div>
+                </div>
+                <div class="level-tooltip" id="level-tooltip">Explore more to level up!</div>
+            </div>
+        </div>
+        <div class="header-right" style="display:flex;align-items:center;gap:12px;">
+            <a href="../" style="color:#888;font-size:0.85rem;text-decoration:none;">Home</a>
+            <a href="../traditional/" style="color:#888;font-size:0.85rem;text-decoration:none;">Classic site</a>
+            <button class="history-btn" id="open-history">📜 History & Progress</button>
+        </div>
+    </header>
+
+    <main id="story-container">
+        <h1 class="game-title" id="page-main-title">Kavya.Work</h1>
+        <div class="dialogue-box" id="dialogue-box"></div>
+    </main>
+
+    <!-- Slide-Up Choices Drawer -->
+    <aside id="choices-drawer">
+        <button class="drawer-toggle" id="drawer-toggle">
+            <span>Choose an action / response...</span>
+            <span class="toggle-icon">▲</span>
+        </button>
+        <div class="drawer-content">
+            <ul class="choices-list" id="choices-list"></ul>
+        </div>
+    </aside>
+
+    <!-- Navigation History Drawer -->
+    <aside id="history-drawer">
+        <div class="history-header">
+            <h3>Adventure History</h3>
+            <button class="close-btn" id="close-history">&times;</button>
+        </div>
+        <ul class="history-list" id="history-list"></ul>
+        <div class="reset-btn-container">
+            <button id="reset-progress-btn" class="reset-btn">Reset All Progress</button>
+        </div>
+    </aside>
+
+    <!-- Lightbox Modal -->
+    <div id="lightbox-modal">
+        <button class="lightbox-close-btn" id="close-lightbox">&times;</button>
+        <img src="" alt="Expanded View" class="lightbox-content" id="lightbox-img">
+    </div>
+
+    <script>
+        /**
+         * Global Engine State Tracker
+         */
+        const gameState = {
+            visitedSections: new Set(JSON.parse(localStorage.getItem('visited_sections') || '[]')),
+            visitCounts: JSON.parse(localStorage.getItem('visit_counts') || '{}'),
+            flags: JSON.parse(localStorage.getItem('game_flags') || '{}'),
+            playerName: localStorage.getItem('player_name') || ''
+        };
+
+        /**
+         * LEVEL SYSTEM CONFIGURATION
+         * 10 levels with placeholder names. Thresholds are auto-calculated
+         * based on total discoverable content in storyData.
+         * The player STARTS BELOW Level 1 (at "Lv. 0") with an empty progress
+         * bar that fills toward Level 1 as they discover content.
+         */
+        const LEVEL_CONFIG = [
+            { name: "Newcomer" },        // Level 1
+            { name: "Curious" },         // Level 2
+            { name: "Explorer" },        // Level 3
+            { name: "Pathfinder" },      // Level 4
+            { name: "Wayfarer" },        // Level 5
+            { name: "Adventurer" },      // Level 6
+            { name: "Trailblazer" },     // Level 7
+            { name: "Lorekeeper" },      // Level 8
+            { name: "Sage" },            // Level 9
+            { name: "Completionist" }    // Level 10
+        ];
+        const MAX_LEVEL = LEVEL_CONFIG.length;
+
+        /**
+         * Name shown while the player has not yet reached Level 1.
+         * This is the "Lv. 0" starting state — the progress bar begins
+         * unfilled and fills as it approaches Level 1 ("Newcomer").
+         */
+        const PRE_LEVEL_NAME = "Unranked";
+
+        /**
+         * MAIN STORY DATA CONFIGURATION OBJECT
+         * Content can be an array OR a function: (flags, visitCount) => [...]
+         */
+        const storyData = {
+            // ------------------------------------------------------------------------
+            // SECTION: #homepage
+            // ------------------------------------------------------------------------
+            "homepage": {
+                name: "Homepage",
+                pageType: "interactive",
+                condition: (flags) => true,
+
+                content: (flags, visitCount) => {
+                    // STAGE 0: Initial state before clicking "Hello?"
+                    if (!flags["intro_start"]) {
+                        return [
+                            "<i>&lt;humming the tune to jingle bells&gt;</i>"
+                        ];
+                    }
+
+                    const asciiJumpingPerson = `
+<span class="ascii-jumping">
+  \\ (•◡•) /
+    \\  /
+     ||
+    /  \\
+</span>`;
+
+                    // STAGE 1: Immediate reaction after clicking "Hello?"
+                    if (flags["intro_start"] && !flags["intro_choice_1"] && !flags["intro_choice_2"]) {
+                        return [
+                            "<i>*jumps*</i> " + asciiJumpingPerson,
+                            "Oh hello, I didn't see you there. What brings you here?"
+                        ];
+                    }
+
+                    // STAGE 2: Response after selecting Choice 1 or Choice 2 + Full Intro
+                    let reactionText = "";
+                    if (flags["intro_choice_1"]) {
+                        reactionText = "Oh, I did? Of course I did. Sorry I am easily spooked. Welcome!";
+                    } else if (flags["intro_choice_2"]) {
+                        reactionText = "Interesting, we should chat more about how you landed here, but for now, welcome!";
+                    }
+
+                    // RETURNING VISITOR GREETINGS
+                    // `visitCount` is homex — how many times the player has been
+                    // to #homepage. The more they come back, the more familiar
+                    // Kavya gets. The highest matching threshold wins.
+                    const nameSpan = gameState.playerName
+                        ? `<span class="name-display">${gameState.playerName}</span>`
+                        : "friend";
+
+                    const returnGreetings = [
+                        { minVisits: 21, text: "At this point you come here more than I do. Have you perhaps seen my coffee mug anywhere? I haven't been able to find it since the last time you were here." },
+                        { minVisits: 16, text: "Hey <player_name>, at this point you should move in." },
+                        { minVisits: 13, text: "Welcome old friend, I have missed your company." },
+                        { minVisits: 11, text: "Oh it's you again!" },
+                        { minVisits: 8, text: "Oh hello, <player_name>! Make yourself at home!" },
+                        { minVisits: 6, text: "Welcome back <player_name>! It's nice to see you here again, what would you want to talk about today?" }
+                    ];
+
+                    const returningGreeting = returnGreetings
+                        .find(greeting => visitCount >= greeting.minVisits);
+
+                    const greetingText = returningGreeting
+                        ? returningGreeting.text.replace("<player_name>", nameSpan)
+                        : (gameState.playerName
+                            ? `Nice to meet you, <span class="name-display">${gameState.playerName}</span>! What would you like to explore?`
+                            : null);
+
+                    const result = [
+                        reactionText,
+                        "<hr style='border: 0; border-top: 1px dashed #444; margin: 16px 0;'>",
+                        "Hi! I am Kavya Pragallapati.",
+                        "Welcome to my personal corner of the internet.",
+                        "Here you'll find out about my main quests that helped me level up, my inner monologues, and some of the side quests I have been on. Let me know what you want to see first!"
+                    ];
+
+                    if (greetingText) {
+                        result.push(greetingText);
+                    } else {
+                        result.push("May I have your name?");
+                        result.push({ type: 'name_input' });
+                    }
+
+                    return result;
+                },
+
+                choices: [
+                    // STAGE 0 CHOICE
+                    {
+                        id: "intro_start",
+                        text: "Hello?",
+                        target: "homepage",
+                        condition: (flags) => !flags["intro_start"]
+                    },
+
+                    // STAGE 1 CHOICES (Appear after clicking "Hello?")
+                    {
+                        id: "intro_choice_1",
+                        text: "Oh you gave me the link to this, and told me to come here.",
+                        target: "homepage",
+                        condition: (flags) => flags["intro_start"] && !flags["intro_choice_1"] && !flags["intro_choice_2"]
+                    },
+                    {
+                        id: "intro_choice_2",
+                        text: "Your door was open I walked in out of curiosity.",
+                        target: "homepage",
+                        condition: (flags) => flags["intro_start"] && !flags["intro_choice_1"] && !flags["intro_choice_2"]
+                    },
+
+                    // STAGE 2 CHOICES (Appear after completing Stage 1)
+                    {
+                        id: "choice_1",
+                        text: "Tell me more about these main quests you speak of.",
+                        target: "work",
+                        condition: (flags) => flags["intro_choice_1"] || flags["intro_choice_2"]
+                    },
+                    {
+                        id: "choice_2",
+                        text: "Tell me about yourself.",
+                        target: "aboutme",
+                        condition: (flags) => flags["intro_choice_1"] || flags["intro_choice_2"]
+                    },
+                    {
+                        id: "choice_3",
+                        text: "What do you do for fun around here?",
+                        target: "funstuff",
+                        condition: (flags) => flags["intro_choice_1"] || flags["intro_choice_2"]
+                    },
+                    {
+                        id: "choice_4",
+                        text: "I want to read one of your blogs.",
+                        target: "blogs",
+                        condition: (flags) => flags["intro_choice_1"] || flags["intro_choice_2"]
+                    },
+                    {
+                        id: "choice_5",
+                        text: "How do I contact you?",
+                        target: "contact",
+                        condition: (flags) => flags["intro_choice_1"] || flags["intro_choice_2"]
+                    },
+                    {
+                        id: "choice_6",
+                        text: "Wait and listen to the ambient noise.",
+                        target: "crickets",
+                        condition: (flags) => flags["intro_choice_1"] || flags["intro_choice_2"]
+                    },
+                    {
+                        id: "choice_7",
+                        text: "I am an introvert. [Exit text RPG mode]",
+                        target: "../traditional/index.html",
+                        condition: (flags) => flags["intro_choice_1"] || flags["intro_choice_2"]
+                    }
+                ]
+            },
+            // ------------------------------------------------------------------------
+            // SECTION: #operation_wordplay
+            // ------------------------------------------------------------------------
+            "operation_wordplay": {
+                name: "Operation Wordplay Overview",
+                pageType: "static", // "static" = wrapped floats | "interactive" = side-by-side
+                condition: (flags) => true,
+
+                content: (flags, visitCount) => [
+                    "Operation Wordplay is a pack of narrative crossword puzzles, in which the player chases Word Villain, a criminal that is set out to interfere with communication by causing chaos in people's sentences. While I have worked on many narrative puzzles, this one stands out as my magnum opus, of the ones that I have created. The pack also laid foundation for future narrative packs that were created and shipped under my supervision.",
+
+                    {
+                        type: 'image',
+                        src: '../images/Operation Wordplay.jpg',
+                        align: 'right'
+                    },
+
+                    "<b>Design Objectives:</b>",
+                    "<ul>" +
+                    "<li>Creating a balance between narrative pacing and level difficulty.</li>" +
+                    "<li>At no point should the player give up on the puzzles because the narrative clues are too difficult.</li>" +
+                    "<li>The player should also not lose track of the narrative because the narrative is scattered scarcely across the puzzles.</li>" +
+                    "<li>The player should want to continue solving the pack because they're invested in the story.</li>" +
+                    "<li>It should not feel like a grind to reach completion.</li>" +
+                    "</ul>",
+
+                    "<b>Design Challenges:</b>",
+                    "<ul>" +
+                    "<li>Quantity and positioning of themed clues can increase difficulty of the puzzles, so their number and placement needed to follow existing guidelines.</li>" +
+                    "<li>Character limit in the clues required tight narrative.</li>" +
+                    "<li>Narrative needed to follow a strict timeline, pacing was predetermined, the narrative needed to be built around it.</li>" +
+                    "</ul>",
+
+                    "<b>The Solution:</b>",
+
+                    {
+                        type: 'image',
+                        src: '../images/OW_introduction.jpg',
+                        align: 'left'
+                    },
+
+                    "The beginning, the middle, and the end were pre-determined at the 1st, 5th, and the 10th puzzles. The story needed to be built around this.",
+                    "So the first puzzle started by introducing the criminal the player would be chasing. Puzzles 2–4 were various things the criminal was doing, establishing a need to arrest him. The fifth puzzle gives the player a lead to get closer to the criminal, and the final puzzle is an exciting chase.",
+
+                    {
+                        type: 'image',
+                        src: '../images/OW_introduction.jpg',
+                        align: 'right'
+                    },
+
+                    "We had the story, but the difficulty was still a matter of concern. The first puzzle needed to be the easiest, and the difficulty increases as you progress further in the pack. This is because the first few puzzles are to hook people into the pack, and the next are to retain them."
+                ],
+
+                choices: [
+                    { id: "choice_13", text: "Tell me about your non-crossword related work.", target: "opm" },
+                    { id: "choice_14", text: "Do you have samples of the work you have supervised?", target: "packs" },
+                    { id: "choice_18", text: "What are themed crossword puzzles?", target: "theme" },
+                    { id: "choice_9", text: "Tell me more about what you do in your freetime.", target: "funstuff" },
+                    { id: "choice_2", text: "Tell me about yourself.", target: "aboutme" },
+                    { id: "choice_4", text: "I want to read one of your blogs.", target: "blogs" },
+                    { id: "choice_5", text: "How do I contact you?", target: "contact" },
+                    { id: "choice_6", text: "Wait quietly and listen to the ambient noise.", target: "crickets" },
+                    { id: "choice_10", text: "I'd like to explore by myself. [Exit text RPG mode]", target: "../traditional/index.html" }
+                ]
+            },
+            // ------------------------------------------------------------------------
+            // SECTION: #work
+            // ------------------------------------------------------------------------
+            "work": {
+                name: "Main Quests",
+                pageType: "static",
+                condition: (flags) => true,
+
+                content: [
+                    "<b>CLASS:</b> Cruciverbalist & Level Designer",
+                    "<b>SPECIALTY:</b> Word Games, Puzzle Mechanics & Building Scalable Processes",
+                    "<hr style='border: 0; border-top: 1px dashed #444; margin: 12px 0;'>",
+                    "<b>[BACKGROUND]</b> Built a strong foundation in crossword grid construction, created themed puzzles for <i>Daily Themed Crosswords</i>, <i>Crossword Explorer</i>, and <i>Crossword Go</i>. Architected difficulty curves and progression curves for <i>Crossword Explorer</i> and <i>Offline Puzzle Master</i>, optimizing engagement and retention across multiple game modes. Worked as the editor for the packs feature in Daily Themed Crossword, built creation guidelines, set editorial standards and was responsible for feature health maintenance.",
+                    "<b>[MASTERY]</b>",
+                    "<ul>" +
+                    "<li>Level & Difficulty Design (tuning difficulty levers & balancing progression)</li>" +
+                    "<li>Crossword Creation & Editorial Guidelines</li>" +
+                    "<li>Process Setup & Pipeline Optimization</li>" +
+                    "</ul>",
+                    "<b>[PASSIVE TRAIT]</b>",
+                    "<ul>" +
+                    "<li>Spends free time analyzing narrative and puzzle games, breaking down mechanics with one core question: <i>\"How did they make this?\"</i></li>" +
+                    "<li>Looks at everything and thinks, \"Can this be optimized or automated?\" Obsessed with finding a balance between fast and excellent in quality.</li>" +
+                    "</ul>"
+                ],
+
+                choices: [
+                    { id: "choice_8", text: "Is your craft strictly limited to crosswords?", target: "work_notcross" },
+                    { id: "choice_12", text: "Show me your legendary achievements (Best Work).", target: "work_sample" },
+                    { id: "choice_18", text: "How do themed puzzle realms actually work?", target: "theme.html" },
+                    { id: "choice_2", text: "Inspect Character Sheet (About Me).", target: "aboutme.html" },
+                    { id: "choice_9", text: "What side quests do you pursue in your free time?", target: "funstuff.html" },
+                    { id: "choice_4", text: "Open your library of scrolls (Blogs).", target: "blogs" },
+                    { id: "choice_5", text: "Send a message to your guild (Contact).", target: "contact" },
+                    { id: "choice_11", text: "Is there a free roam in this thing? [Exit text RPG mode]", target: "../traditional/index.html" }
+                ]
+            },
+            // ------------------------------------------------------------------------
+            // SECTION: #work_notcross
+            // ------------------------------------------------------------------------
+            "work_notcross": {
+                name: "Beyond Crosswords",
+                pageType: "static",
+                condition: (flags) => true,
+
+                content: [
+                    "Yes and no! Crosswords are my bread and butter, but my role evolved into much more than grid-building. Take Crossword Go, where I acted as the key editorial checkpoint for the image clues.",
+                    "Text clues follow familiar rules, but image clues required a whole new playbook. I had to build guidelines from scratch: the visuals had to be clear so difficulty didn't wildly spike, yet creative enough to keep players delighted.",
+                    "Managing that delicate line, especially across complex themed packs, is where the real level design magic happens.",
+                    "There was also the time when I was working on Offline Puzzle Master, a game that challenged me in more ways than one. I had to tackle the bane of my existence, an enemy that haunts my nightmares, a Word Search grid. But no challenge was too great — I mastered the creation of word search grids and built a progressively difficult wordle curve. I had to teach myself the basics of information theory to do so."
+                ],
+
+                choices: [
+                    { id: "choice_12", text: "Show me your legendary achievements (Best Work).", target: "work_sample" },
+                    { id: "choice_14", text: "I want to know more about Crossword Go.", target: "crossword_go" },
+                    { id: "choice_1", text: "Tell me more about these main quests you speak of.", target: "work" },
+                    { id: "choice_5", text: "How do I contact you?", target: "contact" },
+                    { id: "choice_6", text: "Wait quietly and listen to the ambient noise.", target: "crickets" },
+                    { id: "choice_11", text: "Is there a free roam in this thing? [Exit text RPG mode]", target: "../traditional/index.html" }
+                ]
+            },
+            // ------------------------------------------------------------------------
+            // SECTION: #work_sample
+            // ------------------------------------------------------------------------
+            "work_sample": {
+                name: "Word Samples",
+                pageType: "static",
+                condition: (flags) => true,
+
+                content: [
+                    "Ah, I'm glad you asked! Select an archive entry below to inspect the details:",
+                    "<b>Operation Wordplay:</b> An investigative narrative crossword campaign, that pans out across a pack of 10 puzzles.",
+                    "<b>Crossword Go:</b> A Scrabble-style word game spanning multiple languages, featuring a combination of image and text clues.",
+                    "<b>Daily Themed Crossword:</b> A traditional daily puzzle app where I crafted engaging, themed crosswords.",
+                    "<b>Offline Puzzle Master:</b> A puzzle games platform where I designed a diverse array of word games and explored non-word based puzzle games.",
+                    "Pick an archive, and we shall delve deep into it."
+                ],
+
+                choices: [
+                    // Migrated from work_samples.html — targets point at engine sections
+                    // instead of the old static .html pages.
+                    { id: "choice_13", text: "Tell me about Operation Wordplay.", target: "operation_wordplay" },
+                    { id: "choice_14", text: "I want to know more about Crossword Go.", target: "crossword_go" },
+                    { id: "choice_15", text: "What's this Offline Puzzle Master?", target: "opm" },
+                    { id: "choice_16", text: "What kind of puzzles did you make in Daily Themed Crossword?", target: "dtc" },
+                    { id: "choice_17", text: "What do you mean by narrative crosswords?", target: "narrative" },
+                    { id: "choice_18", text: "What are themed crossword puzzles?", target: "theme" },
+                    { id: "choice_11", text: "Is there a free roam in this thing? [Exit text RPG mode]", target: "../traditional/index.html" }
+                ]
+            },
+
+
+            // ------------------------------------------------------------------------
+            // SECTION: #crossword_go
+            // ------------------------------------------------------------------------
+            "crossword_go": {
+                name: "Crossword Go",
+                pageType: "static",
+                condition: (flags) => true,
+
+                content: [
+                    "Crossword Go is a scrabble style crossword puzzle game that has in-grid clue cells, that required new guidelines that take the shortened clue length and striking a balance between image and text clues.",
+                    "It also required setting up and building new clue styles for smaller words, and reimagining the crossword guidelines to fit the limited clue space."
+                ],
+
+                choices: [
+                    { id: "choice_12", text: "Show me your legendary achievements (Best Work).", target: "work_sample" },
+                    { id: "choice_13", text: "Tell me about Operation Wordplay.", target: "operation_wordplay" },
+                    { id: "choice_1", text: "Tell me more about these main quests you speak of.", target: "work" },
+                    { id: "choice_5", text: "How do I contact you?", target: "contact" },
+                    { id: "choice_6", text: "Wait quietly and listen to the ambient noise.", target: "crickets" },
+                    { id: "choice_11", text: "Is there a free roam in this thing? [Exit text RPG mode]", target: "../traditional/index.html" }
+                ]
+            },
+
+
+            // ------------------------------------------------------------------------
+            // SECTION: #crickets
+            // ------------------------------------------------------------------------
+            "crickets": {
+                name: "Listen",
+                pageType: "interactive",
+                condition: (flags) => true,
+
+                content: (flags, visitCount) => [
+                    visitCount === 1
+                        ? "<i>You sit very still. The room hums faintly.</i>"
+                        : "<i>You sit still again. The crickets remember you.</i>",
+                    "",
+                    "<i>*crickets*</i>",
+                ],
+
+                choices: [
+                    { id: "choice_cricket_back", text: "Okay fine, let's talk.", target: "homepage" },
+                    { id: "choice_cricket_work", text: "Tell me about your work instead.", target: "work" },
+                    { id: "choice_5", text: "How do I contact you?", target: "contact" }
+                ]
+            },
+
+            // ------------------------------------------------------------------------
+            // SECTION: #blogs
+            // ------------------------------------------------------------------------
+            "blogs": {
+                name: "Blogs",
+                pageType: "interactive",
+                condition: (flags) => true,
+
+                content: [
+                    "Articles, tutorials, and personal thoughts on puzzles, design, and everything in between.",
+                    "Pick something to read:"
+                ],
+
+                choices: [
+                    {
+                        id: "choice_narrative_blog",
+                        text: "What are narrative crosswords?",
+                        target: "narrative"
+                    },
+                    {
+                        id: "choice_blog_minecraft",
+                        text: "Minecraft: A Relationship Bound To End In Divorce (Feb 2023)",
+                        target: "blog_minecraft"
+                    },
+                    {
+                        id: "choice_blog_overcooked",
+                        text: "Overcooked 2: The World's Most Chaotic Hang Out Session (Feb 2023)",
+                        target: "blog_overcooked"
+                    },
+                    {
+                        id: "choice_blog_patriarchy",
+                        text: "The Economic Cost of Patriarchy (Sep 2021)",
+                        target: "blog_patriarchy"
+                    },
+                    {
+                        id: "choice_blog_pockets",
+                        text: "Pockets: A Tragic Love Story (Jul 2021)",
+                        target: "blog_pockets"
+                    },
+                    {
+                        id: "choice_blog_lexicon",
+                        text: "The Lexicon of LOL and ROFL (Aug 2020)",
+                        target: "blog_lexicon"
+                    },
+                    {
+                        id: "choice_blogs_work",
+                        text: "Tell me more about these main quests you speak of.",
+                        target: "work"
+                    },
+                    {
+                        id: "choice_blogs_home",
+                        text: "Take me back to the homepage.",
+                        target: "homepage"
+                    },
+                    {
+                        id: "choice_blogs_traditional",
+                        text: "Read blogs on the classic portfolio site.",
+                        target: "../traditional/blogs.html"
+                    }
+                ]
+            },
+
+            // ------------------------------------------------------------------------
+            // SECTION: #narrative
+            // ------------------------------------------------------------------------
+            "narrative": {
+                name: "What are Narrative Crosswords?",
+                pageType: "static",
+                condition: (flags) => true,
+
+                content: [
+                    "How do you have a narrative in a crossword puzzle? That's a great question and I am very glad you asked!",
+                    "If you've ever played an NYT puzzle, you know that certain words in a crossword grid are themed words. These words can be anything, as long as they fit into the theme.",
+                    "E.g. If your theme is \"How to say Hello in different languages\" your words would be \"Hello\", \"Namaste\", \"Hola\", \"Bonjour\", etc. Your clues could be *Greeting in New York, *Greeting in Mumbai, *Greeting in Madrid, *Greeting in Paris.",
+                    "<b>Themed puzzles</b>",
+                    "Here's one of my themed puzzles: 2023-11-10 tautological places.",
+                    "This puzzle is about place names that are tautological. A straight forward theme.",
+                    "<b>Connecting theme words</b>",
+                    "The common phrasing in all the clues establishes that they are themed words and associated clues. However, these clues can skew the difficulty of your overall puzzle, because depending on the theme these are going to be either too difficult or too easy.",
+                    "<b>Narrative puzzles</b>",
+                    "In a narrative puzzle the theme is a little more complex, let me walk you through some narrative puzzles I have created.",
+                    "<ul>" +
+                    "<li>2023-09-20 — TP puzzle about a person winning a lottery</li>" +
+                    "<li>2024-08-06 — Mains grid about a person getting ready for a sports game</li>" +
+                    "<li>2024-08-07 — Stay Tuned, we'll be right back</li>" +
+                    "</ul>",
+                    "For a full narrative pack, check out Operation Wordplay."
+                ],
+
+                choices: [
+                    { id: "choice_narrative_ow", text: "Tell me about Operation Wordplay.", target: "operation_wordplay" },
+                    { id: "choice_narrative_blogs", text: "Back to the blog list.", target: "blogs" },
+                    { id: "choice_1", text: "Tell me more about these main quests you speak of.", target: "work" },
+                    { id: "choice_5", text: "How do I contact you?", target: "contact" },
+                    {
+                        id: "choice_narrative_traditional",
+                        text: "Read this article on the classic portfolio site.",
+                        target: "../traditional/blogs/what-are-narrative-crosswords.html"
+                    },
+                    { id: "choice_11", text: "I'd like to explore by myself. [Exit text RPG mode]", target: "../traditional/blogs/what-are-narrative-crosswords.html" }
+                ]
+            },
+
+            // ------------------------------------------------------------------------
+            // Personal essays (from Portfolio Pages)
+            // ------------------------------------------------------------------------
+            "blog_minecraft": {
+                name: "Minecraft: A Relationship Bound To End In Divorce",
+                pageType: "static",
+                condition: (flags) => true,
+
+                content: [
+                    "<b>February 2023</b>",
+                    { type: "image", src: "../images/blog-minecraft.jpg", align: "right" },
+                    "Minecraft has to be one of the most popular games in gaming history. More than a decade after its first release, it remains one of the most popular titles. It has a loyal fanbase that continues to recruit new players and experiment with mods.",
+                    "So what is Minecraft? If you're like me, you have only heard of the game without knowing anything about the game. Minecraft is a sandbox game developed by Mojang studios. Created by Markus \"Notch\" Persson, the game's goal is to survive in a massive open-world randomly generated map. There are no tangible milestones to chase or storyline that intrigues a player. In fact, there are hardly even instructions on how to play the game.",
+                    "The lack of information provided in the game and how differently every player plays it definitely contributed to my misconceptions about it. Almost two years ago, when talking to a friend, the person who later introduced me to the game, I said, \"I thought it was all about combat.\" I explained to him how I thought the game was purely based on the shoot-and-kill mechanics, and he was beyond surprised at my assumption. He told me it was a relaxing game, and I was not convinced.",
+                    "Now that I have put a decent amount of hours into the game, I am more qualified to write about it.",
+                    "One of the things I love about Minecraft is how its gameplay is customizable to each player. There's no set path for me to follow, no milestones to finish, and no mechanics with which I am forced to interact. The game can be played however I like. Which to me means chopping down trees, building something basic and annoying my friends who are on the server.",
+                    "It's mostly the annoying friends part that I enjoy. Minecraft, at its core, is a game designed to be enjoyed in a community space. Sure, it's fun in a single-player, but it's better when played in a group. Playing in a group also means exploring the various aspects of the game without actually having to engage with mechanics that I do not enjoy. For example, combat is one Minecraft mechanic that I absolutely despise. There's no reason for it other than my unwillingness to learn. I am not someone who enjoys combat in any game. So when I play with a group, I hide behind whoever is the best fighter while they handle the mobs in the game.",
+                    "But two years after my first conversation about Minecraft, I realize the game is about more than just fighting. When you start a new save on Minecraft, you're dropped into a random world with no resources or tools. To survive, you must forage for everything from food to building materials. It's overwhelming the first time, and it's overwhelming the second time. It would likely take many hours of gameplay before I am at ease with the game's mechanics. I survived because I had pro gamers watching my back and telling me what to do, but something tells me I would have given up very soon if I was playing on my own. The lack of instructions in the game can be frustrating.",
+                    "The thing I enjoyed the most in Minecraft is the building aspect of it. I spent far too much time in the game, not knowing that I could randomly build whatever I wanted, whenever, wherever I wanted. The experience was life-changing, to be honest, because I genuinely looked forward to the game for the first time. I was thinking about what I would do to the house I was building and planning the resources I would need to do the same. The revelation literally came as a wrecking ball, completely overhauling my perception of the game.",
+                    "So why, if I love the game, is it a relationship bound to end in divorce? Minecraft is a good game, but it's not for me. There is enough in the game that I love for me to play it for a short duration. But if I were to play it any longer, I start to grow tired and find faults in everything the game offers.",
+                    "I love the building aspect, but I hate the grind for resources. Yes, there is always the option of creative mode. Still, it feels like cheating somehow and takes away from another aspect I love about the game, resource collection. I hate that resource collection always has to be done manually or requires complicated builds that take far too much effort and investment of time and resources. In short, it's a relationship bound to end in divorce.",
+                    "Am I perhaps being too harsh on the game? Probably. When I first started playing the game, primarily out of respect for my friend, I was not in the right headspace for serious gaming, let alone learning a game that requires the amount of time and investment required by Minecraft. Not only was I not committed enough to the game, but I was also playing with people who had been playing the game for far too long. For the most part, I was busy trying to keep pace rather than explore the game alone.",
+                    "To give the game a second chance, I booted it up while writing this review to try it by myself now that I know the basic controls and won't immediately die. But I spawned in a desert with vast amounts of sand to see and not a single tree to punch. Unsurprisingly, I died to creepers thrice in the twenty minutes I played. Let's say the inevitable happened — the divorce."
+                ],
+
+                choices: [
+                    { id: "choice_blog_minecraft_blogs", text: "Back to the blog list.", target: "blogs" },
+                    { id: "choice_blog_minecraft_trad", text: "Read this article on the classic portfolio site.", target: "../traditional/blogs/minecraft-relationship-bound-to-end-in-divorce.html" },
+                    { id: "choice_blog_minecraft_exit", text: "I'd like to explore by myself. [Exit text RPG mode]", target: "../traditional/blogs/minecraft-relationship-bound-to-end-in-divorce.html" }
+                ]
+            },
+
+            "blog_overcooked": {
+                name: "Overcooked 2: The World's Most Chaotic Hang Out Session",
+                pageType: "static",
+                condition: (flags) => true,
+
+                content: [
+                    "<b>February 2023</b>",
+                    { type: "image", src: "../images/blog-overcooked-2.jpg", align: "left" },
+                    "A cooking simulation game developed by Team 17 alongside Ghost Town Games, Overcooked 2 is a co-op game for teams of 4. The gameplay is simple in this top-down simulator, you are thrown into the fast paced service industry as soon as you take control of a character on screen. We gather, prep and cook ingredients mentioned in the recipe, those are then assembled in a plate and served to waiting customers. But, it's not just about being a chef, you also gather used dishes, clean them and reuse the cleaned dishes for the next round of order. Basically, you run a restaurant.",
+                    "Just like a real restaurant, Overcooked 2 is not a game you can play alone, unless you're a pro-gamer or if you have nerves of steel. Since I have neither, the first time I played was with a team. In the co-op mode we, a single team of 4, tried to make our way through the levels.",
+                    "It tested our coordination skills, our patience and our ability to keep our voices down in the middle of the night. Overcooked 2 is undoubtedly a very well designed game that puts both your mechanical skills and your strategy skills to test. You don't need to be proficient at the controls if you're really good at time management. It's a game that takes ten minutes to learn and hours to master.",
+                    "The game's biggest asset is probably its simplicity. The core of the game is simple, but it never feels monotonous or easy. The complexity of the recipes and the multitude of tasks ramp up the stakes in the cooking simulator. The game's difficulty increases pretty early on, before the end of the first world we were screaming for dishes to be washed, ingredients to be chopped up and sauces to be cooked, and I can tell you from experience none got done on time because we were not just learning to keep up with the game, we were learning to communicate in a way we never had to before.",
+                    "While the game makes it harder for people to navigate around the level, it also provides abilities that make the game easier. For example, in levels where the kitchen is spread across multiple platforms, all of which will periodically move, cutting off access to certain parts of the kitchen and certain ingredients if you're not prepared. It's of course slightly easier when there are a bunch of people, because one person can lock themselves into a part of the kitchen ensuring sustained access to the ingredients placed in the area.",
+                    "However, having access to ingredients means nothing if we can't pass it onto our team mates, this is where the ability to throw uncooked ingredients comes into play. Being able to toss stuff from one person to another makes the game that much more playable. The ability to throw things around the level map greatly improves maneuverability and creates the opportunity for some very fun moments. It's always a satisfying moment when I lob a chicken leg straight into the fryer, or toss an ingredient right at my teammate. It is also extremely helpful when I need to thwart their rhythm during a vs match."
+                ],
+
+                choices: [
+                    { id: "choice_blog_overcooked_blogs", text: "Back to the blog list.", target: "blogs" },
+                    { id: "choice_blog_overcooked_trad", text: "Read this article on the classic portfolio site.", target: "../traditional/blogs/overcooked-2-chaotic-hang-out.html" },
+                    { id: "choice_blog_overcooked_exit", text: "I'd like to explore by myself. [Exit text RPG mode]", target: "../traditional/blogs/overcooked-2-chaotic-hang-out.html" }
+                ]
+            },
+
+            "blog_pockets": {
+                name: "Pockets: A Tragic Love Story",
+                pageType: "static",
+                condition: (flags) => true,
+
+                content: [
+                    "<b>July 2021</b>",
+                    { type: "image", src: "../images/blog-pockets.jpg", align: "right" },
+                    "Have you ever complimented a girl on her dress? If her dress has pockets, chances are, you just made her day. She'll put her hands in her pockets with an excited grin, \"it has pockets,\" she'll declare the obvious.",
+                    "I was browsing for clothes the other day and realized pockets were not one of the criteria in filters. I was disappointed. Nothing new, though, I always am. It's a never-ending saga. I look for clothes with functional pockets. I leave unsatisfied.",
+                    "It has always been a point of bitterness for me. How hard can it be to add pockets to my jeans, pockets big enough to hold my phone? I could blame the phone manufacturers for making the phones bigger and bigger with every release. Unfortunately, the blame is on the clothes.",
+                    "I realize this every time I hand my phone to my brother to hold onto. He has enough pockets to hold two phones, and mine is barely enough to fit one small pebble. This happened again when my friend put both mine and his phones in the same pocket. Can you believe it? One pocket was big enough to hold two phones!",
+                    "This wasn't enough to make me jealous. It's fine, clothes are made differently, that I can understand. What's unfair is the entire contents of my small bag fit into one pocket of men's jeans. It was one of those days when I didn't have a bag on me. I took the risk of carrying my phone in my pocket. Half of it was peeking out of my pocket, ready to jump if the opportunity presented itself. It almost felt like my phone wanted to run away from me. I refused to give it the opportunity. When I had to bend to tie my laces, I knew my pocket was waiting for revenge. The phone would have tumbled down, hitting the floor. A tragedy I wanted to avoid.",
+                    "\"Hold this for a second?\" I handed my phone to my friend. He plucked it out of my hands without a second thought. I watched in awe as he placed my phone into a pocket that already had his phone and his sanitizer bottle. \"The other one has keys. I don't want to scratch your screen,\" he answered in way of explanation. Little did he know my shock had nothing to do with scratches on my screen. Must be a happy life if your pockets are big enough to hold the universe.",
+                    "I dream of the day when my pockets would hold the contents of my purse that way. I would be free from all bindings of purse handles. I would no longer have to adjust the strap when it digs into my shoulder. I yearn for a day when I wouldn't have to dig through my purse to find my phone. I'll reach into my pocket, knowing for sure that I'll find my phone. I won't have to sift through the wallet, the sanitizer, the earphones that have all run out of their designated places in my bag. It feels, sometimes, like the contents of my purse hate me. Ensuring I find everything except the one thing I seek.",
+                    "Pockets and I will one day be star-crossed lovers no more. We'll exist together. We won't have to cross universes to find one another."
+                ],
+
+                choices: [
+                    { id: "choice_blog_pockets_blogs", text: "Back to the blog list.", target: "blogs" },
+                    { id: "choice_blog_pockets_trad", text: "Read this article on the classic portfolio site.", target: "../traditional/blogs/pockets-a-tragic-love-story.html" },
+                    { id: "choice_blog_pockets_exit", text: "I'd like to explore by myself. [Exit text RPG mode]", target: "../traditional/blogs/pockets-a-tragic-love-story.html" }
+                ]
+            },
+
+            "blog_patriarchy": {
+                name: "The Economic Cost of Patriarchy",
+                pageType: "static",
+                condition: (flags) => true,
+
+                content: [
+                    "<b>September 2021</b>",
+                    { type: "image", src: "../images/blog-economic-patriarchy.jpg", align: "left" },
+                    "Half of the work in the world is unpaid, a large portion of which falls on women. It is not a shocking statement; it is something we see every day. There is a glaring inequality of division of unpaid work. The effect of inequality came to the forefront during the lockdown. When the world shut down, the workplace came home. Recognizing the burden that fell on the shoulders of the women of the household became easier to see. Discussions around the problematic aspects of the phenomenon started to gain heat.",
+                    "There will always exist some form of unpaid labor carried out as a part of everyday lives. Unpaid labor includes household chores, care work, especially for elders and children. Oxfam estimates the value of work undertaken by women accounts for $10.9 trillion worldwide. This number is greater than the total money made by the top 50 largest companies in the world.",
+                    "It is impractical to delegate all such free labor to services that are part of the markets. The existence and undertaking of unpaid chores are not the problems. The problem lies in the skewed division of this labor. India exhibits one of the widest gaps in the distribution of uncompensated work between genders. While Indian women spend 6 hours a day on this work, their male counterparts only spend 52 minutes. The gap is smallest in the Nordic countries. Irrespective of the country, continent, or region, the fact remains that women across the world spent more time engaged in unpaid work than men.",
+                    "The problem with insufficient compensation paid to women for their work extends beyond the domestic sphere, in the workplace, where men and women deserve to receive equal compensation for their work. Data collected in recent years have shown that women receive only 70% of what men gain for the same service. There is also the problem of the disproportionate presence of women in managerial positions. Women make up almost half of the workforce. Yet, they hold less than 30% of senior management positions.",
+                    "While women receive only a fraction of their male counterparts, the taxes and prices on goods marketed for them are higher. This phenomenon is called the Pink Tax. The word Pink Tax itself is a testament to the pervasiveness of gender stereotypes in everyday life. We must, however, understand it to gain a fuller picture.",
+                    "The Pink Tax is a phenomenon where products marketed to women cost way higher than those intended for men for no substantial reason.",
+                    "Pink Tax is a multilayered problem. Why the term Pink Tax? Pink is a color generally associated with femininity. Many of these products that fall in the higher price bracket have pink packaging. In many parts of the world, these products are taxed higher by governments and priced differently by the sellers and producers. Hence, the term Pink tax.",
+                    "One of the most important examples of Pink Tax is the Tax imposed on sanitary pads and tampons. In India, there is a 12% luxury tax on Sanitary products. When a no-tax category exists for necessities, it feels right for sanitary pads to be in that category.",
+                    "This bias is evident in the prices of clothing for men and women. While we can buy a simple men's shirt for less than 500 rupees, the same isn't the case for women's shirts. They are more expensive, and in some countries, women's clothing is taxed higher than men's clothing. In most brands, buying a simple t-shirt from the women's section is a challenge irrespective of its cost. There are at least a dozen combinations of necklines, cloth type, presence of sequins, sleeve types, etc. decision-making becomes a complex probability problem. The result is often the impossibility of finding the right combination of all variables despite paying a higher price.",
+                    "Another glaringly obvious bias is in toiletries. Female-coded toiletries are often more expensive than male-coded ones. Despite the two offering the same benefits, the pink Tax significantly raises the price of the products marketed to women. Unisex products too are cheaper than products made explicitly for women.",
+                    "One reason for the continuing presence of Pink Tax is the lack of constitutional safeguards to prevent such differential pricing. While some countries have tried to change policy to remove Pink Tax, it has largely proved unsuccessful.",
+                    "To reach a society equal in all aspects of life, we need policy reforms and constitutional amendments to ensure them. This requires the presence of women in the decision-making bodies of the government. While the representation of women in public office in India is higher than in most other countries, it is not proportional to the percentage of the population that women make up. Women in India makeup almost 50% of the population but only make up 15% of the Lok Sabha.",
+                    "The multi-tiered inequalities in treatment of the genders reach further than what meets the eye. The root cause is societal norms that dictate a specific stereotypical idea of work, behavior, and role that people are expected to play as a part of society. The root cause is a patriarchal society that has drilled into our minds that women are the default caregivers. Their work is their duty. To be a part of the economic labor force, political decision-makers, judicial personnel, or law enforcement, women must jump through multiple hurdles to prove their worth.",
+                    "Iceland ranks first in the Global Gender Gap report, a testament to the most gender-equal society to exist today. This is primarily due to the government reforms. Social safety net programs provide care for children and older people. Iceland has one of the highest rates of women in labor force participation.",
+                    "This change was made possible by a nationwide strike that Icelandic women undertook in 1975. They refused to cook, clean, or care for children for an entire day. On that day — now remembered as the Long Friday — life country almost came to a halt. It drove in the importance of women's unseen work recognizing the effect of internalizing patriarchal outlook.",
+                    "While a worldwide strike of such magnitude is not feasible, we are now more aware and woke than in 1975. The first step would be recognizing the massive discrimination based on gender that is still in play in plain view. We need to acknowledge the internalized gender stereotypes. Only then can we realize the massive socio-economic cost of gender inequality and patriarchy."
+                ],
+
+                choices: [
+                    { id: "choice_blog_patriarchy_blogs", text: "Back to the blog list.", target: "blogs" },
+                    { id: "choice_blog_patriarchy_trad", text: "Read this article on the classic portfolio site.", target: "../traditional/blogs/the-economic-cost-of-patriarchy.html" },
+                    { id: "choice_blog_patriarchy_exit", text: "I'd like to explore by myself. [Exit text RPG mode]", target: "../traditional/blogs/the-economic-cost-of-patriarchy.html" }
+                ]
+            },
+
+            "blog_lexicon": {
+                name: "The Lexicon of LOL and ROFL",
+                pageType: "static",
+                condition: (flags) => true,
+
+                content: [
+                    "<b>August 2020</b>",
+                    { type: "image", src: "../images/blog-lexicon-lol.jpg", align: "right" },
+                    "A long, long time ago, in a distant past, everyone was fascinated by the invention that changed the world as it was known. That invention was the internet. In the last decade of the twentieth century, which seems like a millennia ago but was only thirty years in the past, my parents learning to use the computers couldn't have imagined the impact the internet would have on their children. Much less the language they speak and write. It's no surprise the impact of the internet seeped into our lexicon too.",
+                    "While the internet has been a significant part of people's lives for the better part of the twenty-first century, it only recently became an indispensable part of our existence. Since the world has entered a lockdown, people's lives have shifted online. Everything from work to shopping to hanging out with friends turned virtual.",
+                    "Five months ago, the little victories I used to share with my friends turned solitary. Shared only through pictures and excited messages on WhatsApp. Four months ago, we started to whine about missing the same classes we despised. Three months ago, the worry shifted towards the fast approaching exams. Two months ago, worry transformed into anger towards the indecisiveness of college administration. A month ago, our paths separated as we all took different routes forward. Now, all news is shared over frantic texts lest it gets lost in the void preceding the weekly call, which only happens monthly.",
+                    "This new dependence on the internet made me see a reality I had never noticed. We as a generation had developed, long before the pandemic hit, a nuanced language capable of transmitting emotions over text. We condensed emotions expressed through voice, body language, and facial expressions into the alphabet and a couple of <a href=\"https://www.kaspersky.com/blog/cyber-slang-peculiarities/10079/\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color:#00adb5;\">punctuation marks</a>.",
+                    "The universality of this language provides proof for the Psychic Unity of Mankind.",
+                    "It's an Anthropological concept put forward by Adolf Bastian, which to me, always seemed a little absurd. The psychic unity of humankind claims that all humans share the same fundamental psychological, mental, or cognitive make-up or potential.",
+                    "Before the lockdown, there were few examples for it that seemed convincing. Now, however, my friend who has known me for longer than anyone can tell that I disagree with the number of periods that follow my text. <a href=\"https://www.urbandictionary.com/define.php?term=ellipsis\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color:#00adb5;\">Ellipsis</a> has now replaced proper punctuation marks on the internet. None means I am fine, because in the era for instant messaging punctuation takes too much effort. An ellipsis, three or more periods, indicate the silence in which my brain processes the next sentence. Two periods, however, is cause for immediate panic. For years I took this for accepted because she has known me for the better half of my life. Until someone whom I have known for less than three years picked up on the same.",
+                    "Question marks no longer indicate an actual question but the intonation. The little nuance of the tentativeness of delivering a line. There is no reason for this except, <i>it just seems right?</i>",
+                    "IMHO, at the turn of the century, this sentence would have made no sense. Acronyms weren't randomly born. Instead, they were agreed upon, by a committee, before large-scale acceptance. If I hadn't been from the generation that grew up on this new lexicon, seeing myself use ROFL in a sentence, I would SMH and said '<i>askfghlf</i>' at the absurdity of it.",
+                    "Everyone tends to see the side of the internet that can't differentiate between your and you're while failing to recognize the intricate nuances of the language. It amazes me how with neither written rules nor formal training, people from around the world communicate in a language continuously evolving.",
+                    "It is without any vocal agreement accepted that the words <i>said</i>, <i>like</i>, and <i>all like</i> have different meanings while communicating the same meaning. While said implies a direct quote from someone, the use of 'like' implies that I am paraphrasing. Yet, when I say 'she was all like' it means I have added a spoonful of exaggeration, take it with a grain of salt.",
+                    "When I started writing this, it was a story about human adaptability. Now that I have finished, this is a letter of gratitude to all who helped create an entirely written language capable of capturing the entire spectrum of human emotion. This makes communication so much easier. I can only imagine the pain it would be to not be able to understand if my friend was being sarcastic or simply angry with me."
+                ],
+
+                choices: [
+                    { id: "choice_blog_lexicon_blogs", text: "Back to the blog list.", target: "blogs" },
+                    { id: "choice_blog_lexicon_trad", text: "Read this article on the classic portfolio site.", target: "../traditional/blogs/the-lexicon-of-lol-and-rofl.html" },
+                    { id: "choice_blog_lexicon_exit", text: "I'd like to explore by myself. [Exit text RPG mode]", target: "../traditional/blogs/the-lexicon-of-lol-and-rofl.html" }
+                ]
+            },
+
+            // ------------------------------------------------------------------------
+            // SECTION: #contact (contact_me)
+            // ------------------------------------------------------------------------
+            "contact": {
+                name: "Contact Me",
+                pageType: "interactive",
+                condition: (flags) => true,
+
+                content: [
+                    "<b>Ph. No.:</b> +91 8977012358",
+                    "<b>Email:</b> <a href=\"mailto:Kavyasree0710@gmail.com\" style=\"color:#00adb5;\">Kavyasree0710@gmail.com</a>",
+                    "<b>Linkedin:</b> <a href=\"https://www.linkedin.com/in/kavya-pragallapati\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color:#00adb5;\">www.linkedin.com/in/kavya-pragallapati</a>"
+                ],
+
+                choices: [
+                    { id: "choice_1", text: "Tell me more about these main quests you speak of.", target: "work" },
+                    { id: "choice_2", text: "Tell me about yourself.", target: "aboutme" },
+                    { id: "choice_4", text: "I want to read one of your blogs.", target: "blogs" },
+                    { id: "choice_contact_home", text: "Take me back to the homepage.", target: "homepage" },
+                    { id: "choice_11", text: "Is there a free roam in this thing? [Exit text RPG mode]", target: "../traditional/index.html" }
+                ]
+            },
+
+
+
+        };
+
+        // ── Cricket Sound Engine (Web Audio API) ─────────────────────────────────
+        let cricketAudioCtx = null;
+        let cricketNodes = [];
+        let cricketInterval = null;
+
+        function startCrickets() {
+            if (cricketAudioCtx) return; // already running
+            cricketAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+            function chirp() {
+                if (!cricketAudioCtx) return;
+                const chirpCount = 3 + Math.floor(Math.random() * 3); // 3-5 clicks per chirp
+                for (let i = 0; i < chirpCount; i++) {
+                    const osc = cricketAudioCtx.createOscillator();
+                    const gain = cricketAudioCtx.createGain();
+                    osc.connect(gain);
+                    gain.connect(cricketAudioCtx.destination);
+
+                    // Crickets chirp at ~4-5 kHz
+                    osc.frequency.setValueAtTime(4200 + Math.random() * 600, cricketAudioCtx.currentTime);
+                    osc.type = 'sine';
+
+                    const clickStart = cricketAudioCtx.currentTime + i * 0.04;
+                    gain.gain.setValueAtTime(0, clickStart);
+                    gain.gain.linearRampToValueAtTime(0.08, clickStart + 0.008);
+                    gain.gain.linearRampToValueAtTime(0, clickStart + 0.022);
+
+                    osc.start(clickStart);
+                    osc.stop(clickStart + 0.025);
+                    cricketNodes.push(osc);
+                }
+            }
+
+            // Fire first chirp immediately then repeat every 0.8–1.6s
+            chirp();
+            cricketInterval = setInterval(() => {
+                chirp();
+            }, 800 + Math.random() * 800);
+        }
+
+        function stopCrickets() {
+            clearInterval(cricketInterval);
+            cricketInterval = null;
+            if (cricketAudioCtx) {
+                cricketAudioCtx.close();
+                cricketAudioCtx = null;
+            }
+            cricketNodes = [];
+        }
+        // ─────────────────────────────────────────────────────────────────────────
+
+
+        // Persistent Navigation History Helpers
+        function getNavHistory() {
+            return JSON.parse(localStorage.getItem('nav_history') || '[]');
+        }
+
+        function recordChoiceClick(choiceId, choiceText, targetKey) {
+            gameState.flags[choiceId] = true;
+            gameState.visitedSections.add(targetKey);
+
+            localStorage.setItem('game_flags', JSON.stringify(gameState.flags));
+            localStorage.setItem('visited_sections', JSON.stringify(Array.from(gameState.visitedSections)));
+
+            const history = getNavHistory();
+            history.push({ id: choiceId, text: choiceText, target: targetKey });
+            localStorage.setItem('nav_history', JSON.stringify(history));
+        }
+
+        // ── Level System Engine ─────────────────────────────────────────────────
+        /**
+         * Sections that do NOT count as "discoverable" content.
+         * The landing page is where the player starts, so simply loading the
+         * engine should not award progress. Without this, the automatic visit
+         * to #homepage would push the player past Level 0 (Unranked) the moment
+         * the page boots up, defeating the "start with an unfilled Lv. 1 bar" state.
+         */
+        const NON_DISCOVERABLE_SECTIONS = new Set(["homepage"]);
+
+        /**
+         * Calculates total discoverable content dynamically from storyData.
+         * Counts: unique discoverable section keys + unique choice IDs across all sections.
+         */
+        function getTotalDiscoverableCount() {
+            const allChoiceIds = new Set();
+            let sectionCount = 0;
+            for (const key in storyData) {
+                const section = storyData[key];
+                if (section.choices) {
+                    section.choices.forEach(c => allChoiceIds.add(c.id));
+                }
+                if (NON_DISCOVERABLE_SECTIONS.has(key)) continue;
+                sectionCount++;
+            }
+            return sectionCount + allChoiceIds.size;
+        }
+
+        /**
+         * Calculates how much the player has discovered.
+         * Counts: visited discoverable sections + triggered flags (choice clicks).
+         */
+        function getPlayerDiscoveredCount() {
+            let visitedCount = 0;
+            gameState.visitedSections.forEach(key => {
+                if (!NON_DISCOVERABLE_SECTIONS.has(key)) visitedCount++;
+            });
+            const flagCount = Object.keys(gameState.flags).length;
+            return visitedCount + flagCount;
+        }
+
+        /**
+         * Builds progressive level thresholds.
+         * Each level requires progressively more discovery.
+         * Uses a power curve so early levels are fast, later levels are slower.
+         */
+        function buildLevelThresholds(totalContent) {
+            const thresholds = [];
+            for (let i = 0; i < MAX_LEVEL; i++) {
+                // Power curve: fraction^1.5 so early levels are easy, later ones are hard
+                const fraction = (i + 1) / MAX_LEVEL;
+                const threshold = Math.round(totalContent * Math.pow(fraction, 1.5));
+                thresholds.push(Math.max(threshold, i + 1)); // at least i+1
+            }
+            return thresholds;
+        }
+
+        /**
+         * Determines the player's current level based on discovery count.
+         * Starts at 0 (below Level 1) until the first threshold is reached,
+         * so the player begins with the progress bar to Level 1 unfilled.
+         */
+        function getCurrentLevel(discovered, thresholds) {
+            let level = 0;
+            for (let i = 0; i < thresholds.length; i++) {
+                if (discovered >= thresholds[i]) {
+                    level = i + 1;
+                } else {
+                    break;
+                }
+            }
+            return Math.min(level, MAX_LEVEL);
+        }
+
+        /**
+         * Updates the level bar UI in the header.
+         */
+        function updateLevelBar() {
+            const total = getTotalDiscoverableCount();
+            const discovered = getPlayerDiscoveredCount();
+            const thresholds = buildLevelThresholds(total);
+            const level = getCurrentLevel(discovered, thresholds);
+            const levelName = level >= 1 ? LEVEL_CONFIG[level - 1].name : PRE_LEVEL_NAME;
+
+            const badge = document.getElementById('level-badge');
+            const fill = document.getElementById('level-fill');
+            const tooltip = document.getElementById('level-tooltip');
+
+            // Check for level-up
+            const prevLevel = parseInt(badge.textContent.replace(/\D/g, ''), 10) || 0;
+            if (level > prevLevel) {
+                const container = document.getElementById('level-bar-container');
+                container.classList.add('level-up-flash');
+                setTimeout(() => container.classList.remove('level-up-flash'), 800);
+            }
+
+            badge.textContent = `Lv. ${level}`;
+
+            // Calculate fill percentage toward the NEXT level.
+            // Level 0 (the starting state) fills toward Level 1, and every level
+            // after that fills toward the level that follows it.
+            const prevThreshold = level >= 1 ? thresholds[level - 1] : 0;
+            const nextThreshold = level < MAX_LEVEL ? thresholds[level] : total;
+            const bracketSize = nextThreshold - prevThreshold;
+            const bracketProgress = discovered - prevThreshold;
+
+            let fillPercent;
+            if (level >= MAX_LEVEL) {
+                fillPercent = 100;
+            } else {
+                fillPercent = bracketSize > 0
+                    ? Math.min(Math.max((bracketProgress / bracketSize) * 100, 0), 100)
+                    : 100;
+            }
+            fill.style.width = fillPercent + '%';
+
+            const playerNameStr = gameState.playerName ? ` — ${gameState.playerName}` : '';
+            if (level >= MAX_LEVEL) {
+                tooltip.textContent = `✨ ${levelName}${playerNameStr} — Max level reached!`;
+            } else {
+                const remaining = nextThreshold - discovered;
+                const nextLevelName = ` (${LEVEL_CONFIG[level].name})`;
+                tooltip.textContent = `${levelName}${playerNameStr} — ${remaining} more to Lv. ${level + 1}${nextLevelName}`;
+            }
+        }
+        // ─────────────────────────────────────────────────────────────────────────
+
+        // ── Name Input Handler ───────────────────────────────────────────────────
+        function handleNameSubmit(inputEl) {
+            const name = inputEl.value.trim();
+            if (!name) return;
+            gameState.playerName = name;
+            localStorage.setItem('player_name', name);
+            // Re-render homepage to show greeting with name
+            renderSection('homepage');
+            updateLevelBar();
+        }
+        // ─────────────────────────────────────────────────────────────────────────
+
+        // Section Renderer
+        const dialogueBox = document.getElementById('dialogue-box');
+        const storyContainer = document.getElementById('story-container');
+
+        function renderSection(sectionKey) {
+            // Stop cricket audio whenever we navigate away from that section
+            if (sectionKey !== "crickets") stopCrickets();
+
+            const section = storyData[sectionKey];
+
+            // Fallback to homepage if key is unknown or invalid
+            if (!section) {
+                console.warn(`Section "${sectionKey}" not found. Redirecting to #homepage.`);
+                window.location.hash = "homepage";
+                return;
+            }
+
+            // Start cricket audio when entering the crickets section
+            if (sectionKey === "crickets") startCrickets();
+
+            // Check Section Gate
+            if (section.condition && !section.condition(gameState.flags)) {
+                alert("The conditions to view this section have not been met! Try exploring other pages first.");
+                window.location.hash = "homepage";
+                return;
+            }
+
+            // Update visit counter & state
+            gameState.visitCounts[sectionKey] = (gameState.visitCounts[sectionKey] || 0) + 1;
+            const currentVisitCount = gameState.visitCounts[sectionKey];
+
+            gameState.visitedSections.add(sectionKey);
+            localStorage.setItem('visited_sections', JSON.stringify(Array.from(gameState.visitedSections)));
+            localStorage.setItem('visit_counts', JSON.stringify(gameState.visitCounts));
+
+            // Update level bar on each section load
+            updateLevelBar();
+            dialogueBox.innerHTML = "";
+
+            // Evaluate dynamic content if function, or use directly if array
+            const activeContent = typeof section.content === 'function'
+                ? section.content(gameState.flags, currentVisitCount)
+                : section.content;
+
+            const containsImage = activeContent.some(item => typeof item === 'object' && item.type === 'image');
+
+            // Handle Static (Float) vs Interactive (Side-by-side) Layout Modes
+            if (section.pageType === "static") {
+                dialogueBox.classList.add('static-wrap-layout');
+                dialogueBox.classList.remove('side-by-side-layout');
+
+                activeContent.forEach(item => {
+                    if (typeof item === 'object' && item.type === 'image') {
+                        const imageCol = document.createElement('div');
+                        imageCol.className = `dialogue-image-column ${item.align === 'left' ? 'float-left' : 'float-right'}`;
+
+                        const carouselWrapper = document.createElement('div');
+                        carouselWrapper.className = 'carousel-wrapper';
+                        imageCol.appendChild(carouselWrapper);
+
+                        const sources = Array.isArray(item.src) ? item.src : [item.src];
+                        sources.forEach(src => {
+                            const img = document.createElement('img');
+                            img.src = src;
+                            img.className = 'dialogue-image active-slide';
+                            img.onerror = () => {
+                                img.src = `https://placehold.co/400x250/1e1e1e/00adb5?text=${encodeURIComponent(src.split('/').pop())}`;
+                            };
+                            img.addEventListener('click', () => openLightbox(img.src));
+                            carouselWrapper.appendChild(img);
+                        });
+
+                        dialogueBox.appendChild(imageCol);
+                    } else if (typeof item === 'object' && item.type === 'name_input') {
+                        const wrapper = document.createElement('div');
+                        wrapper.className = 'name-input-wrapper';
+                        wrapper.innerHTML = `
+                            <input type="text" class="name-input-field" id="name-input" placeholder="Type your name..." maxlength="30" autofocus />
+                            <button class="name-submit-btn" id="name-submit-btn">→ Enter</button>
+                        `;
+                        dialogueBox.appendChild(wrapper);
+                        // Attach events after insertion
+                        setTimeout(() => {
+                            const inp = document.getElementById('name-input');
+                            const btn = document.getElementById('name-submit-btn');
+                            if (inp) {
+                                inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleNameSubmit(inp); });
+                                inp.focus();
+                            }
+                            if (btn) btn.addEventListener('click', () => handleNameSubmit(document.getElementById('name-input')));
+                        }, 50);
+                    } else {
+                        const div = document.createElement('div');
+                        div.innerHTML = item;
+                        dialogueBox.appendChild(div);
+                    }
+                });
+            } else {
+                // Interactive Mode Layout
+                dialogueBox.classList.remove('static-wrap-layout');
+                if (containsImage) dialogueBox.classList.add('side-by-side-layout');
+
+                let textContainer = dialogueBox;
+                let imageContainer = null;
+                let carouselWrapper = null;
+
+                if (containsImage) {
+                    textContainer = document.createElement('div');
+                    textContainer.className = 'dialogue-text-column';
+
+                    imageContainer = document.createElement('div');
+                    imageContainer.className = 'dialogue-image-column';
+
+                    carouselWrapper = document.createElement('div');
+                    carouselWrapper.className = 'carousel-wrapper';
+                    imageContainer.appendChild(carouselWrapper);
+
+                    dialogueBox.appendChild(textContainer);
+                    dialogueBox.appendChild(imageContainer);
+                }
+
+                activeContent.forEach(item => {
+                    if (typeof item === 'object' && item.type === 'image') {
+                        const sources = Array.isArray(item.src) ? item.src : [item.src];
+                        sources.forEach(src => {
+                            const img = document.createElement('img');
+                            img.src = src;
+                            img.className = 'dialogue-image active-slide';
+                            img.onerror = () => {
+                                img.src = `https://placehold.co/400x250/1e1e1e/00adb5?text=${encodeURIComponent(src.split('/').pop())}`;
+                            };
+                            img.addEventListener('click', () => openLightbox(img.src));
+                            carouselWrapper.appendChild(img);
+                        });
+                    } else if (typeof item === 'object' && item.type === 'name_input') {
+                        const wrapper = document.createElement('div');
+                        wrapper.className = 'name-input-wrapper';
+                        wrapper.innerHTML = `
+                            <input type="text" class="name-input-field" id="name-input" placeholder="Type your name..." maxlength="30" autofocus />
+                            <button class="name-submit-btn" id="name-submit-btn">→ Enter</button>
+                        `;
+                        textContainer.appendChild(wrapper);
+                        setTimeout(() => {
+                            const inp = document.getElementById('name-input');
+                            const btn = document.getElementById('name-submit-btn');
+                            if (inp) {
+                                inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleNameSubmit(inp); });
+                                inp.focus();
+                            }
+                            if (btn) btn.addEventListener('click', () => handleNameSubmit(document.getElementById('name-input')));
+                        }, 50);
+                    } else {
+                        const div = document.createElement('div');
+                        div.innerHTML = item;
+                        textContainer.appendChild(div);
+                    }
+                });
+            }
+
+            renderChoices(section);
+            updateLevelBar();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            dialogueBox.scrollTop = 0;
+            if (storyContainer) storyContainer.scrollTop = 0;
+        }
+
+        function renderChoices(section) {
+            const choicesList = document.getElementById("choices-list");
+            choicesList.innerHTML = "";
+
+            const choices = section.choices || [];
+
+            choices.forEach(choice => {
+                // Choice-level Condition Gate
+                if (choice.condition && !choice.condition(gameState.flags)) {
+                    return;
+                }
+
+                const li = document.createElement("li");
+                li.className = "choice-item" + (gameState.flags[choice.id] ? " visited" : "");
+                li.textContent = choice.text;
+
+                li.addEventListener("click", () => {
+                    recordChoiceClick(choice.id, choice.text, choice.target);
+                    updateLevelBar();
+
+                    // Handle ../traditional / external HTML file redirection
+                    if (choice.target === "traditional_index" || choice.target.includes("../traditional") || choice.target.endsWith(".html")) {
+                        const destination = choice.target === "traditional_index" ? "../traditional/index.html" : choice.target;
+                        window.location.href = destination;
+                        return;
+                    }
+
+                    const currentHash = window.location.hash.replace('#', '').trim() || "homepage";
+
+                    // Force immediate re-render when target is the current section
+                    if (choice.target === currentHash) {
+                        renderSection(choice.target);
+                    } else {
+                        window.location.hash = choice.target;
+                    }
+                });
+
+                choicesList.appendChild(li);
+            });
+        }
+
+
+        /**
+         * Hash Route Router
+         * Reads window.location.hash and renders corresponding story section
+         */
+        function handleHashRoute() {
+            const rawHash = window.location.hash.replace('#', '').trim();
+            if (rawHash === "traditional_index" || rawHash.includes("../traditional") || rawHash.endsWith(".html")) {
+                const destination = rawHash === "traditional_index" ? "../traditional/index.html" : rawHash;
+                window.location.href = destination;
+                return;
+            }
+            const targetSection = rawHash || "homepage";
+            renderSection(targetSection);
+        }
+
+        // Listen for back/forward browser navigation and URL hash edits
+        window.addEventListener('hashchange', handleHashRoute);
+
+        // Lightbox Handler
+        const lightboxModal = document.getElementById('lightbox-modal');
+        const lightboxImg = document.getElementById('lightbox-img');
+
+        function openLightbox(src) {
+            lightboxImg.src = src;
+            lightboxModal.classList.add('open');
+        }
+
+        document.getElementById('close-lightbox').addEventListener('click', () => {
+            lightboxModal.classList.remove('open');
+        });
+
+        lightboxModal.addEventListener('click', (e) => {
+            if (e.target === lightboxModal) lightboxModal.classList.remove('open');
+        });
+
+        // History Drawer Handler
+        const historyDrawer = document.getElementById("history-drawer");
+
+        function renderHistoryList() {
+            const historyList = document.getElementById("history-list");
+            historyList.innerHTML = "";
+            const history = getNavHistory();
+
+            if (history.length === 0) {
+                historyList.innerHTML = "<li style='color:#777; font-style:italic;'>No history recorded yet.</li>";
+                return;
+            }
+
+            history.forEach((step, index) => {
+                const li = document.createElement("li");
+                li.className = "history-entry";
+                li.textContent = `${index + 1}. ${step.text}`;
+
+                li.addEventListener("click", () => {
+                    historyDrawer.classList.remove("open");
+                    if (step.target === "traditional_index" || step.target.includes("../traditional") || step.target.endsWith(".html")) {
+                        const destination = step.target === "traditional_index" ? "../traditional/index.html" : step.target;
+                        window.location.href = destination;
+                    } else {
+                        window.location.hash = step.target;
+                    }
+                });
+
+                historyList.appendChild(li);
+            });
+        }
+
+        document.getElementById("open-history").addEventListener("click", () => {
+            renderHistoryList();
+            historyDrawer.classList.add("open");
+        });
+
+        document.getElementById("close-history").addEventListener("click", () => {
+            historyDrawer.classList.remove("open");
+        });
+
+        // Choices drawer toggle (starts minimized; the content area above it
+        // resizes automatically because the page is a flex column)
+        const choicesDrawer = document.getElementById('choices-drawer');
+
+        document.getElementById("drawer-toggle").addEventListener("click", () => {
+            choicesDrawer.classList.toggle("open");
+        });
+
+        // Reset Handler
+        document.getElementById('reset-progress-btn').addEventListener('click', () => {
+            localStorage.clear();
+            gameState.flags = {};
+            gameState.visitCounts = {};
+            gameState.visitedSections.clear();
+            gameState.playerName = '';
+            historyDrawer.classList.remove("open");
+            window.location.hash = "homepage";
+            renderSection("homepage");
+            updateLevelBar();
+        });
+
+        // Engine Initializer
+        window.addEventListener('DOMContentLoaded', () => {
+            updateLevelBar();
+            handleHashRoute();
+        });
+    </script>
+</body>
+
+</html>

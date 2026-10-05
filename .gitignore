@@ -1,0 +1,10 @@
+# Obsidian local state (source notes stay; editor junk does not)
+Portfolio Pages/.obsidian/
+
+# Old drafts — not part of the live site
+Don't Edit/
+
+# OS cruft
+.DS_Store
+Thumbs.db
+Desktop.ini

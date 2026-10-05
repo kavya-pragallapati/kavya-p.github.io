@@ -1,0 +1,460 @@
+/* General Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Entire Page Background */
+body {
+  background-color: #EDE8D0;
+  color: #2c2a29;
+  line-height: 1.6;
+}
+
+/* Navbar Styling */
+.navbar {
+  position: sticky;
+  top: 0;
+  background-color: #EDE8D0;
+  border-bottom: 1px solid #d4ceb8;
+  z-index: 1000;
+}
+
+.nav-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-decoration: none;
+  color: #1a1918;
+}
+
+.nav-links {
+  list-style: none;
+  display: flex;
+  gap: 2rem;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: #4a4742;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.nav-links a:hover {
+  color: #8c5a2b;
+}
+
+/* Hero Section - Distinct Dark Color */
+.hero {
+  padding: 5rem 2rem;
+  text-align: center;
+  background-color: #3A3632; /* Standout background color */
+  color: #EDE8D0;           /* High-contrast text matching the page theme */
+}
+
+.hero h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.hero p {
+  font-size: 1.2rem;
+  color: #d6cfb8;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* General Section Styling */
+.section {
+  padding: 4rem 2rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  background-color: transparent; /* Seamless with body background */
+}
+
+.section h2 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.section-lead {
+  color: #5a5650;
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+  max-width: 720px;
+}
+
+.blog-list {
+  list-style: none;
+  max-width: 720px;
+}
+
+.blog-list li {
+  padding: 1rem 0;
+  border-bottom: 1px solid #d4ceb8;
+}
+
+.blog-list a {
+  display: block;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1a1918;
+  text-decoration: none;
+  margin-bottom: 0.35rem;
+}
+
+.blog-list a:hover {
+  color: #8c5a2b;
+}
+
+.blog-list-desc {
+  display: block;
+  color: #5a5650;
+  font-size: 0.95rem;
+}
+
+.project-article a {
+  color: #8c5a2b;
+  font-weight: 600;
+}
+
+.project-article a:hover {
+  color: #1a1918;
+}
+
+/* Section Separator Line */
+.section-divider {
+  border: none;
+  height: 1px;
+  background-color: #d4ceb8; /* Subtle line matching theme */
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  padding: 2rem;
+  background-color: #3A3632;
+  color: #EDE8D0;
+  font-size: 0.9rem;
+}
+
+/* Page Title Styling */
+.page-title {
+  padding: 3rem 2rem 1rem 2rem;
+  text-align: center;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.page-title h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.page-title p {
+  color: #5a5650;
+  font-size: 1.1rem;
+}
+
+/* Grid Layout for Work Samples */
+.project-grid {
+  display: grid;
+  /* Automatically creates columns that fit the screen width */
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+/* Individual Project Card Container */
+.project-card {
+  background-color: #f6f3e6; /* Slightly lighter shade than #EDE8D0 for contrast */
+  border: 1px solid #d4ceb8;
+  border-radius: 8px;
+  overflow: hidden; /* Ensures rounded corners cut off image edges */
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.project-card:hover {
+  transform: translateY(-4px); /* Moves card slightly up on hover */
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+}
+
+a.card-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+a.card-link .project-info p {
+  margin-bottom: 0;
+}
+
+a.card-link .project-btn {
+  display: inline-block;
+  margin-top: 1.2rem;
+}
+
+a.card-link:hover .project-info h3 {
+  color: #8c5a2b;
+}
+
+/* Image Formatting */
+.image-container {
+  width: 100%;
+  height: 200px; /* Fixed height for consistency */
+  overflow: hidden;
+  background-color: #dcd6bc; /* Fallback color if image fails to load */
+}
+
+.image-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Crops image cleanly to fill frame without distorting aspect ratio */
+  display: block;
+}
+
+/* Text & Button Styling inside Card */
+.project-info {
+  padding: 1.5rem;
+}
+
+.project-info h3 {
+  font-size: 1.3rem;
+  margin-bottom: 0.5rem;
+  color: #1a1918;
+}
+
+.project-info p {
+  color: #4a4742;
+  font-size: 0.95rem;
+  margin-bottom: 1.2rem;
+}
+
+.project-btn {
+  display: inline-block;
+  text-decoration: none;
+  font-weight: 600;
+  color: #8c5a2b;
+  transition: color 0.2s ease;
+}
+
+.project-btn:hover {
+  color: #1a1918;
+}
+
+.cta-button {
+  display: inline-block;
+  text-decoration: none;
+  font-weight: 600;
+  color: #8c5a2b;
+  transition: color 0.2s ease;
+}
+
+.cta-button:hover {
+  color: #1a1918;
+}
+
+.section-footer {
+  margin-top: 2.5rem;
+  text-align: center;
+}
+
+.article-block ul {
+  margin: 0 0 1rem 1.25rem;
+}
+
+.article-block ul li {
+  margin-bottom: 0.45rem;
+}
+
+.content-label {
+  display: block;
+  font-weight: 700;
+  color: #1a1918;
+  margin-top: 1.25rem;
+  margin-bottom: 0.35rem;
+}
+
+.content-divider {
+  border: none;
+  height: 1px;
+  background-color: #d4ceb8;
+  margin: 1.25rem 0;
+}
+
+.quick-links {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.quick-links a {
+  text-decoration: none;
+  font-weight: 600;
+  color: #d6cfb8;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.quick-links a:hover {
+  color: #ffffff;
+  border-bottom-color: #d6cfb8;
+}
+
+.contact-list {
+  list-style: none;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.contact-list li {
+  padding: 0.85rem 0;
+  border-bottom: 1px solid #d4ceb8;
+  font-size: 1.05rem;
+}
+
+.contact-list a {
+  color: #8c5a2b;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.contact-list a:hover {
+  color: #1a1918;
+}
+
+.inline-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.inline-links a {
+  text-decoration: none;
+  font-weight: 600;
+  color: #8c5a2b;
+}
+
+.inline-links a:hover {
+  color: #1a1918;
+}
+
+/* Container for the Project Article */
+.project-article {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+}
+
+.article-block {
+  margin-bottom: 2rem;
+}
+
+.article-block h2 {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+  color: #1a1918;
+}
+
+.article-block p {
+  font-size: 1.05rem;
+  margin-bottom: 1rem;
+  color: #2c2a29;
+}
+
+.article-date,
+.card-date {
+  font-size: 0.95rem;
+  color: #6b6560;
+  margin-top: 0.35rem;
+}
+
+.card-date {
+  margin: 0 0 0.5rem;
+}
+
+.project-article .article-hero {
+  margin: -1rem auto 2rem;
+  padding: 0;
+  max-width: none;
+}
+
+.project-article .article-hero img {
+  width: 100%;
+  max-height: 420px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+/* Base Image Wrapper Styling */
+.img-float-left,
+.img-float-right {
+  max-width: 380px; /* Limits image width so text has plenty of room to wrap */
+  width: 100%;
+}
+
+.img-float-left img,
+.img-float-right img {
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+  border: 1px solid #d4ceb8;
+  display: block;
+}
+
+/* Caption formatting under image */
+.caption {
+  display: block;
+  font-size: 0.85rem;
+  color: #5a5650;
+  margin-top: 0.4rem;
+  font-style: italic;
+  text-align: center;
+}
+
+/* FLOAT LEFT RULES */
+.img-float-left {
+  float: left;
+  margin-right: 2rem;  /* Pushes text away from the right side of image */
+  margin-bottom: 1rem; /* Pushes text away from the bottom of image */
+}
+
+/* FLOAT RIGHT RULES */
+.img-float-right {
+  float: right;
+  margin-left: 2rem;   /* Pushes text away from the left side of image */
+  margin-bottom: 1rem; /* Pushes text away from the bottom of image */
+}
+
+/* CLEARFIX: Prevents floated images from breaking out of section borders */
+.clearfix::after {
+  content: "";
+  clear: both;
+  display: table;
+}
+
+/* Responsive adjustment for small screens (mobile) */
+@media (max-width: 650px) {
+  .img-float-left,
+  .img-float-right {
+    float: none;
+    max-width: 100%;
+    margin: 0 0 1.5rem 0;
+  }
+}

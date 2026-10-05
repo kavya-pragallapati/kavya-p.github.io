@@ -1,0 +1,6 @@
+Static Site Generators - Tools: Astro, Hugo, or 11ty (using HTML, CSS, Markdown/JS).
+
+Why it's great: You can write your blogs in simple Markdown files (.md) without needing to write complex HTML for every new blog post. It automatically builds fast HTML/CSS pages for you.
+
+Hosting - . Netlify (Best Overall / Easiest)  How it works: You can deploy code by connecting a GitHub repository or dragging and dropping a folder containing your HTML, CSS, and images directly into the browser.  Why it fits: Generous free plan, automatic HTTPS (SSL certificate), built-in form handling (so your Contact page works without writing a backend), and custom domain support.  
+
